@@ -104,9 +104,11 @@ Copy `.env.example` to `.env` and configure:
 
 - `PROCESS_NAME`: Process name
 - `NODE_ENV`: Environment (development/production)
+- `PORT`: Application port
 - `MONGODB_URI`: MongoDB connection string
 - `REDIS_HOST`: Redis host
 - `REDIS_PORT`: Redis port
+- `API_KEY`: API key for authorization
 - `LOG_LEVEL`: Logging level
 
 ## API Endpoints
