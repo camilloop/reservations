@@ -20,6 +20,8 @@ const EXCEL_COLUMNS = {
   CHECK_OUT_DATE: 5,
 };
 
+const MAX_ERRORS = 100;
+
 @Injectable()
 export class FileProcessingService {
   constructor(
@@ -28,7 +30,7 @@ export class FileProcessingService {
     private readonly logger: Logger,
   ) {}
 
-  async processFile(task: Task): Promise<void> {
+  async process(task: Task): Promise<void> {
     try {
       await this.taskService.updateStatus(task.id, TaskStatus.IN_PROGRESS);
       const errors = await this.#streamAndProcessFile(task.filePath);
@@ -60,9 +62,23 @@ export class FileProcessingService {
 
         try {
           await this.#processReservationRow(row, rowIndex, errors);
+          if (errors.length >= MAX_ERRORS) {
+            this.logger.warn(
+              `Maximum number of errors (${MAX_ERRORS}) reached. Stopping file processing at row ${rowIndex}.`,
+            );
+            return errors;
+          }
         } catch (error) {
           this.logger.error(`Error processing row ${rowIndex}: ${error.message}`);
-          errors.push(this.#createErrorReport(rowIndex, `Unexpected error: ${error.message}`));
+
+          if (errors.length < MAX_ERRORS) {
+            errors.push(this.#createErrorReport(rowIndex, `Unexpected error: ${error.message}`));
+          } else {
+            this.logger.warn(
+              `Maximum number of errors (${MAX_ERRORS}) reached. Stopping file processing at row ${rowIndex}.`,
+            );
+            return errors;
+          }
         }
       }
     }
@@ -111,6 +127,8 @@ export class FileProcessingService {
 
   #addValidationErrors(validationErrors: ValidationError[], rowIndex: number, errors: ErrorReport[]): void {
     for (const validationError of validationErrors) {
+      if (errors.length >= MAX_ERRORS) return;
+
       const constraints = validationError.constraints;
       if (constraints) {
         const errorMessages = Object.values(constraints);

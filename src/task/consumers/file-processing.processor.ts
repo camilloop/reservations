@@ -19,7 +19,7 @@ export class FileProcessingProcessor extends WorkerHost {
     this.logger.debug(`Processing job ${job.id} for task ${task.id}`);
 
     try {
-      await this.fileProcessingService.processFile(task);
+      await this.fileProcessingService.process(task);
       this.logger.debug(`Job ${job.id} completed for task ${task.id}`);
     } catch (error) {
       this.logger.error(`Job ${job.id} failed for task ${task.id}: ${error.message}`);
