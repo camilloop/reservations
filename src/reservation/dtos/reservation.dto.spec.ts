@@ -70,4 +70,21 @@ describe('ReservationDto', () => {
     expect(dto.checkInDate).toBe('2024-05-01');
     expect(dto.checkOutDate).toBe('2024-05-07');
   });
+
+  it('should transform Excel serial date numbers to ISO strings', async () => {
+    const body = {
+      reservationId: 'RES123',
+      guestName: 'John Doe',
+      status: ReservationStatus.PENDING,
+      checkInDate: '45413',
+      checkOutDate: '45419',
+    };
+
+    const dto = plainToInstance(ReservationDto, body);
+    const errors = await validate(dto);
+
+    expect(errors).toEqual([]);
+    expect(dto.checkInDate).toBe('2024-05-01');
+    expect(dto.checkOutDate).toBe('2024-05-07');
+  });
 });

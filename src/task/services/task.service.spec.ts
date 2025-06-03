@@ -8,11 +8,13 @@ import { TaskNotFoundException, ReportForTaskNotFoundException } from '../errors
 import { TaskStatusResponseDto } from '../dtos';
 import { TaskStatus } from '../enums';
 import { Task } from '../schemas';
+import { TaskStatusGateway } from '../gateways/task-status.gateway';
 
 describe('TaskService', () => {
   let service: TaskService;
   let taskRepository: jest.Mocked<TaskRepository>;
   let taskProducer: jest.Mocked<TaskProducer>;
+  let taskStatusGateway: jest.Mocked<TaskStatusGateway>;
 
   const mockTask: Task = {
     id: '507f1f77bcf86cd799439011',
@@ -33,12 +35,17 @@ describe('TaskService', () => {
           provide: TaskProducer,
           useValue: createMock<TaskProducer>(),
         },
+        {
+          provide: TaskStatusGateway,
+          useValue: createMock<TaskStatusGateway>(),
+        },
       ],
     }).compile();
 
     service = module.get<TaskService>(TaskService);
     taskRepository = module.get(TaskRepository);
     taskProducer = module.get(TaskProducer);
+    taskStatusGateway = module.get(TaskStatusGateway);
   });
 
   afterEach(() => {
@@ -92,6 +99,7 @@ describe('TaskService', () => {
 
       const result = await service.getTaskStatus(taskId);
 
+      expect(taskStatusGateway.notifyTaskStatusUpdate).toHaveBeenCalledWith(taskId, expectedResponse);
       expect(taskRepository.findById).toHaveBeenCalledWith(taskId);
       expect(result).toEqual(expectedResponse);
     });

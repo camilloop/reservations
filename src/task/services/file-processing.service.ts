@@ -1,6 +1,6 @@
-import * as fs from 'node:fs';
 import { Error } from 'mongoose';
-import { Row, Workbook, Worksheet } from 'exceljs';
+import { Row } from 'exceljs';
+import * as ExcelJS from 'exceljs';
 import { validate, ValidationError } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { Injectable, Logger } from '@nestjs/common';
@@ -10,7 +10,6 @@ import { Task, ErrorReport } from '../schemas';
 import { TaskStatus } from '../enums';
 import { ReservationDto } from '../../reservation/dtos';
 import { ReservationStatus } from '../../reservation/enums';
-import { WorksheetNotFoundException } from '../errors';
 import { ReservationProcessorService } from '../../reservation/services';
 
 const EXCEL_COLUMNS = {
@@ -19,9 +18,7 @@ const EXCEL_COLUMNS = {
   STATUS: 3,
   CHECK_IN_DATE: 4,
   CHECK_OUT_DATE: 5,
-} as const;
-
-const DATA_START_ROW = 2;
+};
 
 @Injectable()
 export class FileProcessingService {
@@ -34,8 +31,7 @@ export class FileProcessingService {
   async processFile(task: Task): Promise<void> {
     try {
       await this.taskService.updateStatus(task.id, TaskStatus.IN_PROGRESS);
-      const worksheet = await this.#readFile(task.filePath);
-      const errors = await this.#processWorksheet(worksheet);
+      const errors = await this.#streamAndProcessFile(task.filePath);
 
       await this.taskService.updateStatusWithErrors(task.id, TaskStatus.COMPLETED, errors);
       this.logger.debug(`File processing completed for task ${task.id} with ${errors.length} errors`);
@@ -45,36 +41,29 @@ export class FileProcessingService {
     }
   }
 
-  async #readFile(filePath: string): Promise<Worksheet> {
-    const fileStream = fs.createReadStream(filePath);
-    const workbook = new Workbook();
-
-    await workbook.xlsx.read(fileStream);
-    const worksheet = workbook.getWorksheet(1);
-
-    if (!worksheet) {
-      throw new WorksheetNotFoundException();
-    }
-
-    this.logger.debug(`Number of rows in worksheet: ${worksheet.rowCount}`);
-    return worksheet;
-  }
-
-  async #processWorksheet(worksheet: Worksheet): Promise<ErrorReport[]> {
+  async #streamAndProcessFile(filePath: string): Promise<ErrorReport[]> {
     const errors: ErrorReport[] = [];
+    let rowIndex = 0;
 
-    for (let rowIndex = DATA_START_ROW; rowIndex <= worksheet.rowCount; rowIndex++) {
-      const row = worksheet.getRow(rowIndex);
+    const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(filePath, {
+      styles: 'ignore',
+      worksheets: 'emit',
+    });
 
-      if (this.#isRowEmpty(row)) {
-        continue;
-      }
+    for await (const worksheet of workbookReader) {
+      for await (const row of worksheet) {
+        rowIndex++;
 
-      try {
-        await this.#processReservationRow(row, rowIndex, errors);
-      } catch (error) {
-        this.logger.error(`Error processing row ${rowIndex}: ${error.message}`);
-        errors.push(this.#createErrorReport(rowIndex, `Unexpected error: ${error.message}`));
+        if (rowIndex === 1 || !row || this.#isRowEmpty(row)) {
+          continue;
+        }
+
+        try {
+          await this.#processReservationRow(row, rowIndex, errors);
+        } catch (error) {
+          this.logger.error(`Error processing row ${rowIndex}: ${error.message}`);
+          errors.push(this.#createErrorReport(rowIndex, `Unexpected error: ${error.message}`));
+        }
       }
     }
 
