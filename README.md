@@ -36,6 +36,36 @@ System for managing apartment reservations with file processing capabilities.
    - `reservations_2.xslx` should update one row in database for the first run
    - `reservations_errors.xslx` should cause validation errors and add error reports
 
+## Real-time Task Status Monitoring
+
+The application provides real-time task status updates via WebSocket connection. You can test this functionality using the provided example client:
+
+1. **Open the example client**
+   ```bash
+   # From the project root directory
+   open src/task/examples/websocket-client.html
+   ```
+
+2. **Test the WebSocket connection**
+   1. Open the browser's developer tools console (F12)
+   2. You should see "Connected to WebSocket server" message
+   3. Enter a task ID in the input field (you can get it from the upload response)
+   4. Click "Subscribe" button
+   5. Make a GET request to `/tasks/status/:taskId` for the same task ID
+   6. You should see a real-time status update in the client
+   7. Try unsubscribing using the "Unsubscribe" button to stop receiving updates
+
+3. **Testing multiple clients**
+   - Open the client in multiple browser windows
+   - Subscribe to the same task from different clients
+   - Verify that all clients receive updates
+   - Test disconnection by closing browser windows
+
+4. **WebSocket events**
+   - `subscribeToTask` - Subscribe to task updates
+   - `unsubscribeFromTask` - Unsubscribe from task updates
+   - `taskStatusUpdate` - Receive task status updates
+
 ## Development
 
 ### Local Development

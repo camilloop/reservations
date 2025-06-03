@@ -9,6 +9,7 @@ import { ReservationModule } from '../reservation/reservation.module';
 import { TaskRepository } from './repositories/mongodb';
 import { LoggerMiddleware } from '../_shared/core/logger/logger.middleware';
 import { TaskProducer } from './services/producer';
+import { TaskStatusGateway } from './gateways/task-status.gateway';
 
 @Module({
   imports: [
@@ -19,7 +20,15 @@ import { TaskProducer } from './services/producer';
     ReservationModule,
   ],
   controllers: [TaskController],
-  providers: [TaskService, FileProcessingService, FileProcessingProcessor, Logger, TaskRepository, TaskProducer],
+  providers: [
+    TaskService,
+    FileProcessingService,
+    FileProcessingProcessor,
+    Logger,
+    TaskRepository,
+    TaskProducer,
+    TaskStatusGateway,
+  ],
   exports: [TaskService],
 })
 export class TaskModule {
