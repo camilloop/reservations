@@ -8,6 +8,7 @@ export const validationSchemaConfig = Joi.object({
   MONGODB_URI: Joi.string().required(),
   REDIS_HOST: Joi.string().default('redis'),
   REDIS_PORT: Joi.number().default(6379),
+  API_KEY: Joi.string().required(),
   LOG_LEVEL: Joi.string()
     .valid(...Object.values(LoggerLevel))
     .default(LoggerLevel.Info),
