@@ -6,12 +6,14 @@ import { ReportForTaskNotFoundException, TaskNotFoundException } from '../errors
 import { TaskProducer } from './producer';
 import { ErrorReport, Task } from '../schemas';
 import { TaskStatus } from '../enums';
+import { TaskStatusGateway } from '../gateways/task-status.gateway';
 
 @Injectable()
 export class TaskService {
   constructor(
     private readonly taskRepository: TaskRepository,
     private readonly taskProducer: TaskProducer,
+    private readonly taskStatusGateway: TaskStatusGateway,
   ) {}
 
   async createTask(filePath: string): Promise<{ taskId: string }> {
@@ -28,11 +30,16 @@ export class TaskService {
       throw new TaskNotFoundException(taskId);
     }
 
-    return {
+    const taskStatusResponseDto = {
       id: task.id,
       status: task.status,
       errorReport: task.errorReport,
     };
+
+    // added only for testing purposes and demonstration of websockets
+    this.taskStatusGateway.notifyTaskStatusUpdate(taskId, taskStatusResponseDto);
+
+    return taskStatusResponseDto;
   }
 
   async getTaskReport(taskId: string): Promise<ErrorReport[]> {

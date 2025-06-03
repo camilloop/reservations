@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Status WebSocket Example</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .task-status {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .status-pending { background-color: #fff3cd; }
+        .status-in-progress { background-color: #cce5ff; }
+        .status-completed { background-color: #d4edda; }
+        .status-failed { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Task Status Monitor</h1>
+    <div>
+        <input type="text" id="taskId" placeholder="Enter task ID">
+        <button onclick="subscribeToTask()">Subscribe</button>
+        <button onclick="unsubscribeFromTask()">Unsubscribe</button>
+    </div>
+    <div id="statusUpdates"></div>
+
+    <script>
+        const socket = io('http://localhost:3000/tasks');
+        const statusUpdates = document.getElementById('statusUpdates');
+
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from WebSocket server');
+        });
+
+        socket.on('taskStatusUpdate', (update) => {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `task-status status-${update.status.toLowerCase()}`;
+            statusDiv.innerHTML = `
+                <strong>Task ID:</strong> ${update.taskId}<br>
+                <strong>Status:</strong> ${update.status}<br>
+                ${update.errorReport ? `<strong>Errors:</strong> ${JSON.stringify(update.errorReport, null, 2)}` : ''}
+            `;
+            statusUpdates.insertBefore(statusDiv, statusUpdates.firstChild);
+        });
+
+        function subscribeToTask() {
+            const taskId = document.getElementById('taskId').value;
+            if (taskId) {
+                socket.emit('subscribeToTask', taskId, (response) => {
+                    console.log('Subscribed to task:', response);
+                });
+            }
+        }
+
+        function unsubscribeFromTask() {
+            const taskId = document.getElementById('taskId').value;
+            if (taskId) {
+                socket.emit('unsubscribeFromTask', taskId, (response) => {
+                    console.log('Unsubscribed from task:', response);
+                });
+            }
+        }
+    </script>
+</body>
+</html> 
