@@ -1,5 +1,16 @@
 import { Response } from 'express';
-import { Controller, Post, UseInterceptors, UploadedFile, Logger, UseFilters, Get, Param, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Logger,
+  UseFilters,
+  Get,
+  Param,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -12,6 +23,7 @@ import {
   getSchemaPath,
   ApiExtraModels,
   ApiNotFoundResponse,
+  ApiSecurity,
 } from '@nestjs/swagger';
 
 import { TaskService } from '../services';
@@ -24,6 +36,7 @@ import {
   CustomInternalServerErrorException,
 } from '../../_shared/errors';
 import { ReportForTaskNotFoundException, TaskNotFoundException } from '../errors';
+import { ApiKeyGuard } from '../../_shared/core/auth/api-key.guard';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -34,7 +47,10 @@ import { ReportForTaskNotFoundException, TaskNotFoundException } from '../errors
   CustomInternalServerErrorException,
   TaskNotFoundException,
   ReportForTaskNotFoundException,
+  InvalidIdFormatException,
 )
+@ApiSecurity('x-api-key')
+@UseGuards(ApiKeyGuard)
 export class TaskController {
   constructor(
     private readonly taskService: TaskService,

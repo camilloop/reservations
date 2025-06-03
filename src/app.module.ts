@@ -8,6 +8,7 @@ import { validationSchemaConfig } from './_shared/configs/validation-schema';
 import { LoggerModule } from './_shared/core/logger/logger.module';
 import { TaskModule } from './task/task.module';
 import { ReservationModule } from './reservation/reservation.module';
+import { AuthModule } from './_shared/core/auth/auth.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReservationModule } from './reservation/reservation.module';
     LoggerModule,
     TaskModule,
     ReservationModule,
+    AuthModule,
   ],
   providers: [Logger],
 })
